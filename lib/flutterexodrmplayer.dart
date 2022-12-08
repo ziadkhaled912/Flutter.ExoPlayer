@@ -34,7 +34,7 @@ class DurationRange {
 /// of a [VideoPlayerController].
 class VideoPlayerValue {
   VideoPlayerValue({
-    @required this.duration,
+    required this.duration,
     this.size,
     this.position = const Duration(),
     this.buffered = const <DurationRange>[],
@@ -54,7 +54,7 @@ class VideoPlayerValue {
   /// The total duration of the video.
   ///
   /// Is null when [initialized] is false.
-  final Duration duration;
+  final Duration? duration;
 
   /// The current playback position.
   final Duration position;
@@ -79,30 +79,30 @@ class VideoPlayerValue {
   /// A description of the error if present.
   ///
   /// If [hasError] is false this is [null].
-  final String errorDescription;
+  final String? errorDescription;
 
   /// The [size] of the currently loaded video.
   ///
   /// Is null when [initialized] is false.
-  final Size size;
+  final Size? size;
 
   bool get initialized => duration != null;
 
   bool get hasError => errorDescription != null;
 
-  double get aspectRatio => size != null ? size.width / size.height : 1.0;
+  double get aspectRatio => size != null ? size!.width / size!.height : 1.0;
 
   VideoPlayerValue copyWith({
-    Duration duration,
-    Size size,
-    Duration position,
-    List<DurationRange> buffered,
-    bool isPlaying,
-    bool isLooping,
-    bool isBuffering,
-    double volume,
-    double speed,
-    String errorDescription,
+    Duration? duration,
+    Size? size,
+    Duration? position,
+    List<DurationRange>? buffered,
+    bool? isPlaying,
+    bool? isLooping,
+    bool? isBuffering,
+    double? volume,
+    double? speed,
+    String? errorDescription,
   }) {
     return VideoPlayerValue(
       duration: duration ?? this.duration,
@@ -154,20 +154,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         super(VideoPlayerValue(duration: null));
 
 
-  int _textureId;
-  String dataSource;
+  late int _textureId;
+  late String dataSource;
   MediaContent mediaContent;
 
   /// Describes the type of data source this [VideoPlayerController]
   /// is constructed with.
   final DataSourceType dataSourceType;
 
-  final String package;
-  Timer _timer;
+  final String? package;
+  late Timer _timer;
   bool _isDisposed = false;
-  Completer<void> _creatingCompleter;
-  StreamSubscription<dynamic> _eventSubscription;
-  _VideoAppLifeCycleObserver _lifeCycleObserver;
+  late Completer<void> _creatingCompleter;
+  late StreamSubscription<dynamic> _eventSubscription;
+  late _VideoAppLifeCycleObserver _lifeCycleObserver;
 
   @visibleForTesting
   int get textureId => _textureId;
@@ -220,7 +220,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case 'completed':
           value = value.copyWith(isPlaying: false, position: value.duration);
-          _timer?.cancel();
+          _timer.cancel();
           break;
         case 'bufferingUpdate':
           final List<dynamic> values = map['values'];
@@ -237,10 +237,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       }
     }
 
-    void errorListener(Object obj) {
+    void errorListener(PlatformException obj) {
       final PlatformException e = obj;
-      value = VideoPlayerValue.erroneous(e.message);
-      _timer?.cancel();
+      value = VideoPlayerValue.erroneous(e.message ?? "Unknown error");
+      _timer.cancel();
     }
 
     _eventSubscription = _eventChannelFor(_textureId)
@@ -259,8 +259,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       await _creatingCompleter.future;
       if (!_isDisposed) {
         _isDisposed = true;
-        _timer?.cancel();
-        await _eventSubscription?.cancel();
+        _timer.cancel();
+        await _eventSubscription.cancel();
         // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
         // https://github.com/flutter/flutter/issues/26431
         // ignore: strong_mode_implicit_dynamic_method
@@ -321,7 +321,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           if (_isDisposed) {
             return;
           }
-          final Duration newPosition = await position;
+          final Duration? newPosition = await position;
           if (_isDisposed) {
             return;
           }
@@ -329,7 +329,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         },
       );
     } else {
-      _timer?.cancel();
+      _timer.cancel();
       // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
       // https://github.com/flutter/flutter/issues/26431
       // ignore: strong_mode_implicit_dynamic_method
@@ -393,7 +393,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   }
 
   /// The position in the current video.
-  Future<Duration> get position async {
+  Future<Duration?> get position async {
     if (_isDisposed) {
       return null;
     }
@@ -412,8 +412,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     if (_isDisposed) {
       return;
     }
-    if (moment > value.duration) {
-      moment = value.duration;
+    if (value.duration != null && moment > value.duration!) {
+      moment = value.duration!;
     } else if (moment < const Duration()) {
       moment = const Duration();
     }
@@ -503,8 +503,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
     };
   }
 
-  VoidCallback _listener;
-  int _textureId;
+  late VoidCallback _listener;
+  late int _textureId;
 
   @override
   void initState() {
@@ -549,8 +549,8 @@ class VideoProgressColors {
 
 class _VideoScrubber extends StatefulWidget {
   _VideoScrubber({
-    @required this.child,
-    @required this.controller,
+    required this.child,
+    required this.controller,
   });
 
   final Widget child;
@@ -568,10 +568,10 @@ class _VideoScrubberState extends State<_VideoScrubber> {
   @override
   Widget build(BuildContext context) {
     void seekToRelativePosition(Offset globalPosition) {
-      final RenderBox box = context.findRenderObject();
-      final Offset tapPos = box.globalToLocal(globalPosition);
-      final double relative = tapPos.dx / box.size.width;
-      final Duration position = controller.value.duration * relative;
+      final RenderBox? box = context.findRenderObject() as RenderBox;
+      final Offset? tapPos = box?.globalToLocal(globalPosition);
+      final double relative = tapPos!.dx / box!.size.width;
+      final Duration position = controller.value.duration! * relative;
       controller.seekTo(position);
     }
 
@@ -618,8 +618,8 @@ class _VideoScrubberState extends State<_VideoScrubber> {
 class VideoProgressIndicator extends StatefulWidget {
   VideoProgressIndicator(
       this.controller, {
-        VideoProgressColors colors,
-        this.allowScrubbing,
+        VideoProgressColors? colors,
+        this.allowScrubbing = false,
         this.padding = const EdgeInsets.only(top: 5.0),
       }) : colors = colors ?? VideoProgressColors();
 
@@ -642,7 +642,7 @@ class _VideoProgressIndicatorState extends State<VideoProgressIndicator> {
     };
   }
 
-  VoidCallback listener;
+  late VoidCallback listener;
 
   VideoPlayerController get controller => widget.controller;
 
@@ -664,7 +664,7 @@ class _VideoProgressIndicatorState extends State<VideoProgressIndicator> {
   Widget build(BuildContext context) {
     Widget progressIndicator;
     if (controller.value.initialized) {
-      final int duration = controller.value.duration.inMilliseconds;
+      final int duration = controller.value.duration?.inMilliseconds ?? 0;
       final int position = controller.value.position.inMilliseconds;
 
       int maxBuffering = 0;
@@ -723,7 +723,7 @@ class MediaVolumeSeekBar extends StatefulWidget {
 
 class _MediaVolumeSeekBarState extends State<MediaVolumeSeekBar> {
   var volume = 0;
-  Timer timer;
+  Timer? timer;
   bool showVolumeControls = false;
 
   @override
@@ -740,7 +740,7 @@ class _MediaVolumeSeekBarState extends State<MediaVolumeSeekBar> {
               children: <Widget>[
                 Container(
                   decoration: BoxDecoration(
-                    color: ThemeData().accentColor.withOpacity(0.5),
+                    color: ThemeData().colorScheme.secondary.withOpacity(0.5),
                   ),
                   height: 200 * volume / 30,
                   width: 20,
@@ -749,7 +749,7 @@ class _MediaVolumeSeekBarState extends State<MediaVolumeSeekBar> {
                   decoration: BoxDecoration(
                       border: Border.all(
                         width: 3.0,
-                        color: Colors.grey[100].withOpacity(0.5),
+                        color: (Colors.grey[100]?.withOpacity(0.5))!,
                       )),
                   height: 200,
                   width: 20,
@@ -797,7 +797,7 @@ class _MediaVolumeSeekBarState extends State<MediaVolumeSeekBar> {
               },
               onPanEnd: (details) async {
                 if (timer != null) {
-                  if (timer.isActive) timer.cancel();
+                  if (timer!.isActive) timer!.cancel();
                 }
                 timer = Timer(Duration(milliseconds: 1500), () {
                   showVolumeControls = false;
