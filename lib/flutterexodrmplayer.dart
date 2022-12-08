@@ -154,7 +154,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         super(VideoPlayerValue(duration: null));
 
 
-  late int _textureId;
+  int _textureId = 0;
   late String dataSource;
   MediaContent mediaContent;
 
